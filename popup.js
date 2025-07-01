@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
   const downloadBtn = document.getElementById('downloadBtn');
-  const detectBtn = document.getElementById('detectBtn');
   const status = document.getElementById('status');
+  const floatingButtonToggle = document.getElementById('floatingButtonToggle');
 
   function showStatus(message, type = 'info') {
     status.textContent = message;
@@ -44,85 +44,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  detectBtn.addEventListener('click', async () => {
-    showStatus('Detecting tables...', 'info');
-    
-    const result = await executeScript(() => {
-      // Look for tables on the page, prioritizing collapseElement_group tables
-      const tables = document.querySelectorAll('table');
-      const tableInfo = [];
-      let tenderTablesFound = 0;
 
-      // Check for tables within collapseElement_group
-      const collapseElements = document.querySelectorAll('[class*="collapseElement_group"]');
-      collapseElements.forEach((element, index) => {
-        const table = element.querySelector('table');
-        if (table) {
-          const rows = table.querySelectorAll('tr');
-          const headers = table.querySelectorAll('th');
-          const headerText = table.textContent.toLowerCase();
-          const isTenderTable = headerText.includes('code') &&
-                               headerText.includes('description') &&
-                               (headerText.includes('quantity') || headerText.includes('unit of measurement'));
-
-          if (isTenderTable) tenderTablesFound++;
-
-          tableInfo.push({
-            index: `collapse-${index}`,
-            rows: rows.length,
-            headers: headers.length,
-            hasHeaders: headers.length > 0,
-            visible: table.offsetParent !== null,
-            isTenderTable: isTenderTable,
-            location: 'collapseElement_group'
-          });
-        }
-      });
-
-      // Also check other tables
-      tables.forEach((table, index) => {
-        const rows = table.querySelectorAll('tr');
-        const headers = table.querySelectorAll('th');
-        const headerText = table.textContent.toLowerCase();
-        const isTenderTable = headerText.includes('code') &&
-                             headerText.includes('description') &&
-                             (headerText.includes('quantity') || headerText.includes('unit of measurement'));
-
-        // Only count if not already counted in collapseElement_group
-        const isInCollapseGroup = table.closest('[class*="collapseElement_group"]');
-        if (!isInCollapseGroup && isTenderTable) {
-          tenderTablesFound++;
-        }
-
-        if (!isInCollapseGroup) {
-          tableInfo.push({
-            index: index,
-            rows: rows.length,
-            headers: headers.length,
-            hasHeaders: headers.length > 0,
-            visible: table.offsetParent !== null,
-            isTenderTable: isTenderTable,
-            location: 'general'
-          });
-        }
-      });
-
-      return {
-        tablesFound: tables.length,
-        tenderTablesFound: tenderTablesFound,
-        tableInfo: tableInfo,
-        url: window.location.href
-      };
-    });
-
-    if (result) {
-      if (result.tablesFound > 0) {
-        showStatus(`Found ${result.tablesFound} table(s) on page`, 'success');
-      } else {
-        showStatus('No tables found on this page', 'error');
-      }
-    }
-  });
 
   downloadBtn.addEventListener('click', async () => {
     showStatus('Extracting table data...', 'info');
@@ -186,7 +108,42 @@ document.addEventListener('DOMContentLoaded', function() {
         const data = [];
         const rows = targetTbody.querySelectorAll('tr');
 
-        // Extract all rows (including headers)
+        // Columns to exclude from export
+        const excludedColumns = [
+          'unit price',
+          'price',
+          'vat type',
+          'price inclusive of vat',
+          'vat amount',
+          'delivery period (days)',
+          'row number'
+        ];
+
+        // Find header row to identify column names to exclude
+        let headerColumns = [];
+        const headerRow = targetTbody.querySelector('tr.table_cnt_head');
+        if (headerRow) {
+          const headerCells = headerRow.querySelectorAll('td, th');
+          headerCells.forEach(cell => {
+            // Handle nested tables in headers
+            if (cell.querySelector('.nestedTable')) {
+              const quantityCell = cell.querySelector('.quantityCell');
+              const unitPriceCell = cell.querySelector('.unitPriceCell');
+
+              if (quantityCell) {
+                headerColumns.push(quantityCell.textContent.trim().toLowerCase());
+              }
+              if (unitPriceCell) {
+                headerColumns.push(unitPriceCell.textContent.trim().toLowerCase());
+              }
+            } else {
+              headerColumns.push(cell.textContent.trim().toLowerCase());
+            }
+          });
+        }
+
+        // Extract all rows (including headers) with original column order
+        const rawData = [];
         rows.forEach(row => {
           // Skip the total row
           if (row.classList.contains('tableTotalTr')) {
@@ -195,36 +152,98 @@ document.addEventListener('DOMContentLoaded', function() {
 
           const cells = row.querySelectorAll('td, th');
           const rowData = [];
+          let columnIndex = 0;
 
           cells.forEach(cell => {
             // Skip cells that are part of nested tables (like quantity/unit price)
             if (cell.querySelector('.nestedTable')) {
-              // Extract quantity and unit price separately
+              // For nested tables, we need to handle quantity and unit price as separate logical columns
               const quantityCell = cell.querySelector('.quantityCell');
               const unitPriceCell = cell.querySelector('.unitPriceCell');
 
+              // Check if this cell contains quantity data and if quantity column should be included
               if (quantityCell) {
-                let quantityText = quantityCell.textContent.trim().replace(/\s+/g, ' ');
-                rowData.push(quantityText);
+                const columnName = headerColumns[columnIndex] || '';
+                if (!excludedColumns.some(excludedCol => columnName.includes(excludedCol))) {
+                  let quantityText = quantityCell.textContent.trim().replace(/\s+/g, ' ');
+                  rowData.push({ value: quantityText, originalIndex: columnIndex, columnName: columnName });
+                }
+                columnIndex++;
               }
 
+              // Check if this cell contains unit price data and if unit price column should be included
               if (unitPriceCell) {
-                let unitPriceText = unitPriceCell.textContent.trim().replace(/\s+/g, ' ');
-                rowData.push(unitPriceText);
+                const columnName = headerColumns[columnIndex] || '';
+                if (!excludedColumns.some(excludedCol => columnName.includes(excludedCol))) {
+                  let unitPriceText = unitPriceCell.textContent.trim().replace(/\s+/g, ' ');
+                  rowData.push({ value: unitPriceText, originalIndex: columnIndex, columnName: columnName });
+                }
+                columnIndex++;
               }
             } else {
-              // Regular cell
-              let text = cell.textContent.trim();
-              // Remove extra whitespace and line breaks
-              text = text.replace(/\s+/g, ' ');
-              rowData.push(text);
+              // Regular cell - only include if not in excluded columns
+              const columnName = headerColumns[columnIndex] || '';
+              if (!excludedColumns.some(excludedCol => columnName.includes(excludedCol))) {
+                let text = cell.textContent.trim();
+                // Remove extra whitespace and line breaks
+                text = text.replace(/\s+/g, ' ');
+                rowData.push({ value: text, originalIndex: columnIndex, columnName: columnName });
+              }
+              columnIndex++;
             }
           });
 
           if (rowData.length > 0) {
-            data.push(rowData);
+            rawData.push(rowData);
           }
         });
+
+        // Define column order preferences
+        const columnOrderRules = [
+          { pattern: /code/i, priority: 1 },
+          { pattern: /material/i, priority: 2 },
+          { pattern: /description/i, priority: 3 },
+          { pattern: /remarks/i, priority: 4 },
+          { pattern: /quantity/i, priority: 5 },
+          { pattern: /unit of measurement|uom/i, priority: 6 },
+          { pattern: /delivery location/i, priority: 7 },
+          { pattern: /plant/i, priority: 8 },
+          { pattern: /delivery date/i, priority: 9 }
+        ];
+
+        // Function to get column priority
+        function getColumnPriority(columnName) {
+          for (let rule of columnOrderRules) {
+            if (rule.pattern.test(columnName)) {
+              return rule.priority;
+            }
+          }
+          return 999; // Default priority for unmatched columns
+        }
+
+        // Reorder columns based on priority rules
+        if (rawData.length > 0) {
+          // Sort columns by priority, keeping original order for same priority
+          const sortedColumns = rawData[0]
+            .map((col, index) => ({ ...col, sortIndex: index }))
+            .sort((a, b) => {
+              const priorityA = getColumnPriority(a.columnName);
+              const priorityB = getColumnPriority(b.columnName);
+              if (priorityA !== priorityB) {
+                return priorityA - priorityB;
+              }
+              return a.sortIndex - b.sortIndex; // Keep original order for same priority
+            });
+
+          // Create column mapping
+          const columnMapping = sortedColumns.map(col => col.sortIndex);
+
+          // Reorder all rows according to the new column order
+          rawData.forEach(row => {
+            const reorderedRow = columnMapping.map(originalIndex => row[originalIndex].value);
+            data.push(reorderedRow);
+          });
+        }
 
         // Extract tender information for filename
         function getTenderInfo() {
@@ -320,4 +339,57 @@ document.addEventListener('DOMContentLoaded', function() {
       showStatus(result.error, 'error');
     }
   });
+
+  // Load floating button setting
+  chrome.storage.sync.get(['floatingButtonEnabled'], function(result) {
+    const enabled = result.floatingButtonEnabled !== false; // Default to true
+    updateToggleState(enabled);
+  });
+
+  // Toggle functionality
+  floatingButtonToggle.addEventListener('click', function() {
+    const isCurrentlyActive = floatingButtonToggle.classList.contains('active');
+    const newState = !isCurrentlyActive;
+
+    // Update UI
+    updateToggleState(newState);
+
+    // Save setting
+    chrome.storage.sync.set({ floatingButtonEnabled: newState });
+
+    // Update content script
+    updateFloatingButtonState(newState);
+  });
+
+  function updateToggleState(enabled) {
+    if (enabled) {
+      floatingButtonToggle.classList.add('active');
+    } else {
+      floatingButtonToggle.classList.remove('active');
+    }
+  }
+
+  async function updateFloatingButtonState(enabled) {
+    const tab = await getCurrentTab();
+
+    if (!tab.url.startsWith('https://tawreed.oq.com/')) {
+      return;
+    }
+
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: function(enabled) {
+          // Send message to content script to show/hide floating button
+          window.postMessage({
+            type: 'TAWREED_TOGGLE_FLOATING_BUTTON',
+            enabled: enabled
+          }, '*');
+        },
+        args: [enabled]
+      });
+    } catch (error) {
+      console.error('Error updating floating button state:', error);
+    }
+  }
 });

@@ -11,6 +11,19 @@
       return;
     }
 
+    // Check if floating button is enabled
+    chrome.storage.sync.get(['floatingButtonEnabled'], function(result) {
+      const enabled = result.floatingButtonEnabled !== false; // Default to true
+      if (!enabled) {
+        return;
+      }
+
+      createButtonElement();
+    });
+  }
+
+  function createButtonElement() {
+
     // Only add button if we detect a tender table
     let hasTenderTable = false;
 
@@ -172,7 +185,42 @@
       const data = [];
       const rows = targetTbody.querySelectorAll('tr');
 
-      // Extract all rows (including headers)
+      // Columns to exclude from export
+      const excludedColumns = [
+        'unit price',
+        'price',
+        'vat type',
+        'price inclusive of vat',
+        'vat amount',
+        'delivery period (days)',
+        'row number'
+      ];
+
+      // Find header row to identify column names to exclude
+      let headerColumns = [];
+      const headerRow = targetTbody.querySelector('tr.table_cnt_head');
+      if (headerRow) {
+        const headerCells = headerRow.querySelectorAll('td, th');
+        headerCells.forEach(cell => {
+          // Handle nested tables in headers
+          if (cell.querySelector('.nestedTable')) {
+            const quantityCell = cell.querySelector('.quantityCell');
+            const unitPriceCell = cell.querySelector('.unitPriceCell');
+
+            if (quantityCell) {
+              headerColumns.push(quantityCell.textContent.trim().toLowerCase());
+            }
+            if (unitPriceCell) {
+              headerColumns.push(unitPriceCell.textContent.trim().toLowerCase());
+            }
+          } else {
+            headerColumns.push(cell.textContent.trim().toLowerCase());
+          }
+        });
+      }
+
+      // Extract all rows (including headers) with original column order
+      const rawData = [];
       rows.forEach(row => {
         // Skip the total row
         if (row.classList.contains('tableTotalTr')) {
@@ -181,36 +229,98 @@
 
         const cells = row.querySelectorAll('td, th');
         const rowData = [];
+        let columnIndex = 0;
 
         cells.forEach(cell => {
           // Skip cells that are part of nested tables (like quantity/unit price)
           if (cell.querySelector('.nestedTable')) {
-            // Extract quantity and unit price separately
+            // For nested tables, we need to handle quantity and unit price as separate logical columns
             const quantityCell = cell.querySelector('.quantityCell');
             const unitPriceCell = cell.querySelector('.unitPriceCell');
 
+            // Check if this cell contains quantity data and if quantity column should be included
             if (quantityCell) {
-              let quantityText = quantityCell.textContent.trim().replace(/\s+/g, ' ');
-              rowData.push(quantityText);
+              const columnName = headerColumns[columnIndex] || '';
+              if (!excludedColumns.some(excludedCol => columnName.includes(excludedCol))) {
+                let quantityText = quantityCell.textContent.trim().replace(/\s+/g, ' ');
+                rowData.push({ value: quantityText, originalIndex: columnIndex, columnName: columnName });
+              }
+              columnIndex++;
             }
 
+            // Check if this cell contains unit price data and if unit price column should be included
             if (unitPriceCell) {
-              let unitPriceText = unitPriceCell.textContent.trim().replace(/\s+/g, ' ');
-              rowData.push(unitPriceText);
+              const columnName = headerColumns[columnIndex] || '';
+              if (!excludedColumns.some(excludedCol => columnName.includes(excludedCol))) {
+                let unitPriceText = unitPriceCell.textContent.trim().replace(/\s+/g, ' ');
+                rowData.push({ value: unitPriceText, originalIndex: columnIndex, columnName: columnName });
+              }
+              columnIndex++;
             }
           } else {
-            // Regular cell
-            let text = cell.textContent.trim();
-            // Remove extra whitespace and line breaks
-            text = text.replace(/\s+/g, ' ');
-            rowData.push(text);
+            // Regular cell - only include if not in excluded columns
+            const columnName = headerColumns[columnIndex] || '';
+            if (!excludedColumns.some(excludedCol => columnName.includes(excludedCol))) {
+              let text = cell.textContent.trim();
+              // Remove extra whitespace and line breaks
+              text = text.replace(/\s+/g, ' ');
+              rowData.push({ value: text, originalIndex: columnIndex, columnName: columnName });
+            }
+            columnIndex++;
           }
         });
 
         if (rowData.length > 0) {
-          data.push(rowData);
+          rawData.push(rowData);
         }
       });
+
+      // Define column order preferences
+      const columnOrderRules = [
+        { pattern: /code/i, priority: 1 },
+        { pattern: /material/i, priority: 2 },
+        { pattern: /description/i, priority: 3 },
+        { pattern: /remarks/i, priority: 4 },
+        { pattern: /quantity/i, priority: 5 },
+        { pattern: /unit of measurement|uom/i, priority: 6 },
+        { pattern: /delivery location/i, priority: 7 },
+        { pattern: /plant/i, priority: 8 },
+        { pattern: /delivery date/i, priority: 9 }
+      ];
+
+      // Function to get column priority
+      function getColumnPriority(columnName) {
+        for (let rule of columnOrderRules) {
+          if (rule.pattern.test(columnName)) {
+            return rule.priority;
+          }
+        }
+        return 999; // Default priority for unmatched columns
+      }
+
+      // Reorder columns based on priority rules
+      if (rawData.length > 0) {
+        // Sort columns by priority, keeping original order for same priority
+        const sortedColumns = rawData[0]
+          .map((col, index) => ({ ...col, sortIndex: index }))
+          .sort((a, b) => {
+            const priorityA = getColumnPriority(a.columnName);
+            const priorityB = getColumnPriority(b.columnName);
+            if (priorityA !== priorityB) {
+              return priorityA - priorityB;
+            }
+            return a.sortIndex - b.sortIndex; // Keep original order for same priority
+          });
+
+        // Create column mapping
+        const columnMapping = sortedColumns.map(col => col.sortIndex);
+
+        // Reorder all rows according to the new column order
+        rawData.forEach(row => {
+          const reorderedRow = columnMapping.map(originalIndex => row[originalIndex].value);
+          data.push(reorderedRow);
+        });
+      }
 
       if (data.length === 0) {
         showNotification('No data found in table', 'error');
@@ -359,5 +469,21 @@
     });
   }
   
+  // Listen for messages from popup to toggle floating button
+  window.addEventListener('message', function(event) {
+    if (event.data.type === 'TAWREED_TOGGLE_FLOATING_BUTTON') {
+      const enabled = event.data.enabled;
+      const existingButton = document.getElementById('tawreed-download-btn');
+
+      if (enabled && !existingButton) {
+        // Create button if enabled and doesn't exist
+        createFloatingButton();
+      } else if (!enabled && existingButton) {
+        // Remove button if disabled and exists
+        existingButton.remove();
+      }
+    }
+  });
+
   init();
 })();

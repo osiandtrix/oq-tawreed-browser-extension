@@ -5,7 +5,9 @@
   "description": "Download tables from Tawreed OQ portal as Excel files",
   "permissions": [
     "activeTab",
-    "downloads"
+    "downloads",
+    "storage",
+    "scripting"
   ],
   "host_permissions": [
     "https://tawreed.oq.com/*"
