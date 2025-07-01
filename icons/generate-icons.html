@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Icon Generator - Tawreed OQ Extension</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .icon-preview {
+            display: flex;
+            gap: 30px;
+            margin: 30px 0;
+            align-items: center;
+        }
+        .icon-size {
+            text-align: center;
+        }
+        .icon-size h3 {
+            margin: 10px 0 5px 0;
+            color: #2c5aa0;
+        }
+        .icon-size p {
+            margin: 5px 0;
+            font-size: 12px;
+            color: #666;
+        }
+        canvas {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+        }
+        .download-btn {
+            background: #2c5aa0;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        .download-btn:hover {
+            background: #1e3d6f;
+        }
+        .instructions {
+            background: #e8f4f8;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #2c5aa0;
+        }
+        .instructions h3 {
+            margin-top: 0;
+            color: #2c5aa0;
+        }
+        .svg-preview {
+            text-align: center;
+            margin: 20px 0;
+        }
+        #svgContainer {
+            display: inline-block;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            background: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tawreed OQ Extension - Icon Generator</h1>
+        
+        <div class="instructions">
+            <h3>📋 Instructions</h3>
+            <ol>
+                <li>The SVG icon is displayed below</li>
+                <li>Click the download buttons to save PNG files at different sizes</li>
+                <li>Save the downloaded files as <code>icon16.png</code>, <code>icon48.png</code>, and <code>icon128.png</code></li>
+                <li>Place them in the <code>icons/</code> folder of your extension</li>
+                <li>Reload the extension in Chrome to see the new icons</li>
+            </ol>
+        </div>
+
+        <div class="svg-preview">
+            <h3>Original SVG Icon</h3>
+            <div id="svgContainer"></div>
+        </div>
+
+        <div class="icon-preview">
+            <div class="icon-size">
+                <h3>16×16</h3>
+                <canvas id="canvas16" width="16" height="16"></canvas>
+                <p>Toolbar icon</p>
+                <button class="download-btn" onclick="downloadIcon(16)">Download icon16.png</button>
+            </div>
+            
+            <div class="icon-size">
+                <h3>48×48</h3>
+                <canvas id="canvas48" width="48" height="48"></canvas>
+                <p>Extension page</p>
+                <button class="download-btn" onclick="downloadIcon(48)">Download icon48.png</button>
+            </div>
+            
+            <div class="icon-size">
+                <h3>128×128</h3>
+                <canvas id="canvas128" width="128" height="128"></canvas>
+                <p>Chrome Web Store</p>
+                <button class="download-btn" onclick="downloadIcon(128)">Download icon128.png</button>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <h3>🎨 Icon Design</h3>
+            <p>The icon features:</p>
+            <ul>
+                <li><strong>Blue circle background</strong> - Professional corporate look</li>
+                <li><strong>White table/spreadsheet</strong> - Represents data tables</li>
+                <li><strong>Grid lines</strong> - Shows table structure</li>
+                <li><strong>Green download arrow</strong> - Indicates download functionality</li>
+                <li><strong>Data dots</strong> - Represents table content</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const svgString = `<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="64" cy="64" r="60" fill="#2c5aa0" stroke="#1e3d6f" stroke-width="2"/>
+  <rect x="32" y="28" width="64" height="48" rx="4" fill="white" stroke="#2c5aa0" stroke-width="2"/>
+  <line x1="32" y1="40" x2="96" y2="40" stroke="#2c5aa0" stroke-width="1.5"/>
+  <line x1="32" y1="52" x2="96" y2="52" stroke="#2c5aa0" stroke-width="1"/>
+  <line x1="32" y1="64" x2="96" y2="64" stroke="#2c5aa0" stroke-width="1"/>
+  <line x1="48" y1="28" x2="48" y2="76" stroke="#2c5aa0" stroke-width="1"/>
+  <line x1="64" y1="28" x2="64" y2="76" stroke="#2c5aa0" stroke-width="1"/>
+  <line x1="80" y1="28" x2="80" y2="76" stroke="#2c5aa0" stroke-width="1"/>
+  <circle cx="64" cy="92" r="16" fill="#28a745" stroke="#1e7e34" stroke-width="2"/>
+  <path d="M64 84 L64 100 M58 94 L64 100 L70 94" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <circle cx="40" cy="46" r="1.5" fill="#2c5aa0"/>
+  <circle cx="56" cy="46" r="1.5" fill="#2c5aa0"/>
+  <circle cx="72" cy="46" r="1.5" fill="#2c5aa0"/>
+  <circle cx="88" cy="46" r="1.5" fill="#2c5aa0"/>
+  <circle cx="40" cy="58" r="1.5" fill="#2c5aa0"/>
+  <circle cx="56" cy="58" r="1.5" fill="#2c5aa0"/>
+  <circle cx="72" cy="58" r="1.5" fill="#2c5aa0"/>
+  <circle cx="88" cy="58" r="1.5" fill="#2c5aa0"/>
+  <circle cx="40" cy="70" r="1.5" fill="#2c5aa0"/>
+  <circle cx="56" cy="70" r="1.5" fill="#2c5aa0"/>
+  <circle cx="72" cy="70" r="1.5" fill="#2c5aa0"/>
+  <circle cx="88" cy="70" r="1.5" fill="#2c5aa0"/>
+</svg>`;
+
+        function loadSVG() {
+            // Display SVG
+            document.getElementById('svgContainer').innerHTML = svgString;
+            
+            // Generate PNG versions
+            const img = new Image();
+            const svgBlob = new Blob([svgString], {type: 'image/svg+xml'});
+            const url = URL.createObjectURL(svgBlob);
+            
+            img.onload = function() {
+                [16, 48, 128].forEach(size => {
+                    const canvas = document.getElementById(`canvas${size}`);
+                    const ctx = canvas.getContext('2d');
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = 'high';
+                    ctx.drawImage(img, 0, 0, size, size);
+                });
+                URL.revokeObjectURL(url);
+            };
+            
+            img.src = url;
+        }
+
+        function downloadIcon(size) {
+            const canvas = document.getElementById(`canvas${size}`);
+            const link = document.createElement('a');
+            link.download = `icon${size}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // Load SVG when page loads
+        window.onload = loadSVG;
+    </script>
+</body>
+</html>

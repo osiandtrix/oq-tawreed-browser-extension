@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      width: 300px;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .logo {
+      font-size: 18px;
+      font-weight: bold;
+      color: #2c5aa0;
+      margin-bottom: 5px;
+    }
+    .subtitle {
+      font-size: 12px;
+      color: #666;
+    }
+    .button {
+      width: 100%;
+      padding: 12px;
+      background-color: #2c5aa0;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+    .button:hover {
+      background-color: #1e3d6f;
+    }
+    .button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    .status {
+      text-align: center;
+      font-size: 12px;
+      margin-top: 10px;
+      padding: 8px;
+      border-radius: 3px;
+    }
+    .status.success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .status.error {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    .status.info {
+      background-color: #d1ecf1;
+      color: #0c5460;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">Tawreed OQ Downloader</div>
+    <div class="subtitle">Extract tender tables to Excel</div>
+  </div>
+  
+  <button id="downloadBtn" class="button">Download Table as Excel</button>
+  <button id="detectBtn" class="button">Detect Tables</button>
+  
+  <div id="status" class="status" style="display: none;"></div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>

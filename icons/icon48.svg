@@ -1,0 +1,25 @@
+<svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="24" cy="24" r="22" fill="#2c5aa0" stroke="#1e3d6f" stroke-width="1"/>
+    <rect x="12" y="10.5" width="24" height="18" rx="1.5" fill="white" stroke="#2c5aa0" stroke-width="1"/>
+    <line x1="12" y1="15" x2="36" y2="15" stroke="#2c5aa0" stroke-width="0.8"/>
+    <line x1="12" y1="19.5" x2="36" y2="19.5" stroke="#2c5aa0" stroke-width="0.8"/>
+    <line x1="12" y1="24" x2="36" y2="24" stroke="#2c5aa0" stroke-width="0.8"/>
+    <line x1="18" y1="10.5" x2="18" y2="28.5" stroke="#2c5aa0" stroke-width="0.8"/>
+    <line x1="24" y1="10.5" x2="24" y2="28.5" stroke="#2c5aa0" stroke-width="0.8"/>
+    <line x1="30" y1="10.5" x2="30" y2="28.5" stroke="#2c5aa0" stroke-width="0.8"/>
+    <circle cx="24" cy="34.5" r="6" fill="#28a745" stroke="#1e7e34" stroke-width="1"/>
+    <path d="M24 31.5 L24 37.5 M21.6 35.1 L24 37.5 L26.4 35.1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <!-- Data dots -->
+    <circle cx="15" cy="17.25" r="0.5" fill="#2c5aa0"/>
+    <circle cx="21" cy="17.25" r="0.5" fill="#2c5aa0"/>
+    <circle cx="27" cy="17.25" r="0.5" fill="#2c5aa0"/>
+    <circle cx="33" cy="17.25" r="0.5" fill="#2c5aa0"/>
+    <circle cx="15" cy="21.75" r="0.5" fill="#2c5aa0"/>
+    <circle cx="21" cy="21.75" r="0.5" fill="#2c5aa0"/>
+    <circle cx="27" cy="21.75" r="0.5" fill="#2c5aa0"/>
+    <circle cx="33" cy="21.75" r="0.5" fill="#2c5aa0"/>
+    <circle cx="15" cy="26.25" r="0.5" fill="#2c5aa0"/>
+    <circle cx="21" cy="26.25" r="0.5" fill="#2c5aa0"/>
+    <circle cx="27" cy="26.25" r="0.5" fill="#2c5aa0"/>
+    <circle cx="33" cy="26.25" r="0.5" fill="#2c5aa0"/>
+</svg>

@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "Tawreed OQ Table Downloader",
+  "version": "1.0",
+  "description": "Download tables from Tawreed OQ portal as Excel files",
+  "permissions": [
+    "activeTab",
+    "downloads"
+  ],
+  "host_permissions": [
+    "https://tawreed.oq.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://tawreed.oq.com/*"
+      ],
+      "js": ["content.js"],
+      "css": ["styles.css"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Download Tawreed Table"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
