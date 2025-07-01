@@ -6,9 +6,11 @@ A Chrome extension that allows users to easily download tables from the Tawreed 
 
 - **Automatic Table Detection**: Automatically detects tender tables on Tawreed OQ portal pages
 - **One-Click Download**: Download tables as CSV files with a single click
-- **Floating Download Button**: Convenient floating button appears on pages with downloadable tables
+- **Optional Floating Button**: Toggle-able floating button for quick access on pages
+- **Smart Column Filtering**: Automatically excludes unwanted columns (VAT, pricing, row numbers)
+- **Intelligent Column Ordering**: Reorders columns for optimal readability
 - **CSV Export**: Exports data in CSV format that can be easily opened in Excel
-- **Timestamp Naming**: Downloaded files include timestamp for easy organization
+- **Clean Filenames**: Downloaded files use tender names without timestamps
 
 ## Installation
 
@@ -27,9 +29,9 @@ A Chrome extension that allows users to easily download tables from the Tawreed 
 
 ## Usage
 
-### Method 1: Floating Button (Recommended)
+### Method 1: Floating Button
 1. Navigate to any Tawreed OQ portal page with tender tables
-2. A blue "Download Table" button will automatically appear in the top-right corner
+2. If enabled, a blue "Download Table" button will appear in the top-right corner
 3. Click the button to instantly download the table as a CSV file
 
 ### Method 2: Extension Popup
@@ -38,16 +40,40 @@ A Chrome extension that allows users to easily download tables from the Tawreed 
 3. Click "Download Table as Excel" in the popup
 4. The table will be downloaded as a CSV file
 
-### Method 3: Table Detection
-1. Use the "Detect Tables" button in the popup to see how many tables are found on the current page
-2. This helps verify you're on the right page before downloading
+### Settings
+- **Toggle Floating Button**: Use the toggle switch in the popup to enable/disable the floating download button
+- **Persistent Settings**: Your preferences are saved and synced across devices
 
 ## File Format
 
 - **Format**: CSV (Comma Separated Values)
 - **Encoding**: UTF-8
-- **Filename**: `tawreed_tender_table_YYYYMMDDTHHMMSS.csv`
+- **Filename**: Uses tender name (e.g., `Tender_Name_Here.csv`)
 - **Compatibility**: Can be opened directly in Excel, Google Sheets, or any spreadsheet application
+
+## Column Management
+
+### Excluded Columns
+The following columns are automatically excluded from exports:
+- Unit Price
+- Price
+- VAT Type
+- Price Inclusive of VAT
+- VAT Amount
+- Delivery Period (Days)
+- Row Number
+
+### Column Order
+Columns are automatically reordered for optimal readability:
+1. Code
+2. Material
+3. Description
+4. Remarks
+5. Quantity
+6. Unit of Measurement
+7. Delivery Location
+8. Plant
+9. Delivery Date
 
 ## Supported Pages
 
@@ -57,10 +83,14 @@ The extension works on:
 
 It specifically looks for tables containing tender information with columns like:
 - Code
+- Material
 - Description
-- Quantity
-- Unit Price
 - Remarks
+- Quantity
+- Unit of Measurement
+- Delivery Location
+- Plant
+- Delivery Date
 - And other tender-related fields
 
 ## Troubleshooting
@@ -72,6 +102,7 @@ It specifically looks for tables containing tender information with columns like
 - Ensure the extension is enabled in Chrome
 
 ### No Download Button Appears
+- Check if the floating button is enabled in the extension popup settings
 - The floating button only appears on pages with detectable tender tables
 - Try using the extension popup instead
 - Check if you're on the correct page (tenders page)
@@ -89,9 +120,10 @@ It specifically looks for tables containing tender information with columns like
 ## Technical Details
 
 - **Manifest Version**: 3
-- **Permissions**: activeTab, downloads
+- **Permissions**: activeTab, downloads, storage, scripting
 - **Content Scripts**: Runs on Tawreed OQ domains
 - **File Format**: CSV with proper escaping for Excel compatibility
+- **Storage**: Uses Chrome sync storage for user preferences
 
 ## Privacy
 
@@ -108,3 +140,4 @@ For issues or feature requests, please contact your IT department or the extensi
 ## Version History
 
 - **v1.0**: Initial release with table detection and CSV download functionality
+- **v1.1**: Added column filtering, reordering, floating button toggle, and improved user experience
