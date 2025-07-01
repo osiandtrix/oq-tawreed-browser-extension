@@ -172,8 +172,22 @@
       const data = [];
       const rows = targetTbody.querySelectorAll('tr');
 
-      // Extract all rows (including headers)
-      rows.forEach(row => {
+      // Define columns to exclude
+      const excludedColumns = [
+        'vat type',
+        'price inclusive of vat',
+        'vat amount',
+        'delivery period (days)',
+        'unit price',
+        'price'
+      ];
+
+      // Extract and reorder columns
+      let allRowsData = [];
+      let columnMapping = {};
+
+      // First pass: extract all data and identify column positions
+      rows.forEach((row, rowIndex) => {
         // Skip the total row
         if (row.classList.contains('tableTotalTr')) {
           return;
@@ -182,34 +196,108 @@
         const cells = row.querySelectorAll('td, th');
         const rowData = [];
 
-        cells.forEach(cell => {
+        cells.forEach((cell, cellIndex) => {
+          let cellText = '';
+          let shouldInclude = true;
+
           // Skip cells that are part of nested tables (like quantity/unit price)
           if (cell.querySelector('.nestedTable')) {
-            // Extract quantity and unit price separately
+            // Extract only quantity, skip unit price
             const quantityCell = cell.querySelector('.quantityCell');
-            const unitPriceCell = cell.querySelector('.unitPriceCell');
-
             if (quantityCell) {
-              let quantityText = quantityCell.textContent.trim().replace(/\s+/g, ' ');
-              rowData.push(quantityText);
-            }
-
-            if (unitPriceCell) {
-              let unitPriceText = unitPriceCell.textContent.trim().replace(/\s+/g, ' ');
-              rowData.push(unitPriceText);
+              cellText = quantityCell.textContent.trim().replace(/\s+/g, ' ');
             }
           } else {
             // Regular cell
-            let text = cell.textContent.trim();
-            // Remove extra whitespace and line breaks
-            text = text.replace(/\s+/g, ' ');
-            rowData.push(text);
+            cellText = cell.textContent.trim().replace(/\s+/g, ' ');
+
+            // Check if this column should be excluded (for header row)
+            if (rowIndex === 0) { // Header row
+              const lowerCaseText = cellText.toLowerCase();
+              shouldInclude = !excludedColumns.some(excluded =>
+                lowerCaseText.includes(excluded)
+              );
+
+              // Map column positions for reordering
+              if (shouldInclude) {
+                if (lowerCaseText.includes('code')) {
+                  columnMapping.code = cellIndex;
+                } else if (lowerCaseText.includes('description')) {
+                  columnMapping.description = cellIndex;
+                } else if (lowerCaseText.includes('material')) {
+                  columnMapping.material = cellIndex;
+                } else if (lowerCaseText.includes('quantity')) {
+                  columnMapping.quantity = cellIndex;
+                } else if (lowerCaseText.includes('unit of measurement')) {
+                  columnMapping.unitOfMeasurement = cellIndex;
+                } else if (lowerCaseText.includes('remarks')) {
+                  columnMapping.remarks = cellIndex;
+                }
+              }
+            }
+          }
+
+          if (shouldInclude && cellText) {
+            rowData.push({ text: cellText, originalIndex: cellIndex });
           }
         });
 
         if (rowData.length > 0) {
-          data.push(rowData);
+          allRowsData.push(rowData);
         }
+      });
+
+      // Second pass: reorder columns to put Material between Code and Description
+      allRowsData.forEach((rowData, rowIndex) => {
+        const reorderedRow = [];
+
+        // Add columns in desired order
+        rowData.forEach(cellData => {
+          const { text, originalIndex } = cellData;
+
+          if (rowIndex === 0) { // Header row
+            const lowerText = text.toLowerCase();
+            if (lowerText.includes('code')) {
+              reorderedRow.push({ text, order: 1 });
+            } else if (lowerText.includes('material')) {
+              reorderedRow.push({ text, order: 2 });
+            } else if (lowerText.includes('description')) {
+              reorderedRow.push({ text, order: 3 });
+            } else if (lowerText.includes('quantity')) {
+              reorderedRow.push({ text, order: 4 });
+            } else if (lowerText.includes('unit of measurement')) {
+              reorderedRow.push({ text, order: 5 });
+            } else if (lowerText.includes('remarks')) {
+              reorderedRow.push({ text, order: 6 });
+            } else {
+              reorderedRow.push({ text, order: 10 }); // Other columns come after
+            }
+          } else {
+            // For data rows, use the same ordering logic based on original column mapping
+            if (originalIndex === columnMapping.code) {
+              reorderedRow.push({ text, order: 1 });
+            } else if (originalIndex === columnMapping.material) {
+              reorderedRow.push({ text, order: 2 });
+            } else if (originalIndex === columnMapping.description) {
+              reorderedRow.push({ text, order: 3 });
+            } else if (originalIndex === columnMapping.quantity) {
+              reorderedRow.push({ text, order: 4 });
+            } else if (originalIndex === columnMapping.unitOfMeasurement) {
+              reorderedRow.push({ text, order: 5 });
+            } else if (originalIndex === columnMapping.remarks) {
+              reorderedRow.push({ text, order: 6 });
+            } else {
+              reorderedRow.push({ text, order: 10 });
+            }
+          }
+        });
+
+        // Sort by order and extract text
+        const sortedRow = reorderedRow
+          .sort((a, b) => a.order - b.order)
+          .map(item => item.text);
+
+        data.push(sortedRow);
       });
 
       if (data.length === 0) {
